@@ -8,35 +8,11 @@ from six.moves.urllib.parse import urlparse
 from six import text_type
 
 import mohawk
-from requests.auth import AuthBase
 
 
-class HawkAuth(AuthBase):
-    """Handles authentication using Hawk.
 
-    :param hawk_session:
-      The hawk session, from the server, encoded as hexadecimal.
-      You don't need to set this parameter if you already know the hawk
-      credentials (Optional).
 
-    :param id:
-      The hawk id string to use for authentication (Optional).
-
-    :param key:
-      A string containing the hawk secret key (Optional).
-
-    :param algorithm:
-      A string containing the name of the algorithm to be used.
-      (Optional, defaults to 'sha256').
-
-    :param server_url:
-      The url of the server, this is useful for hawk when signing the requests.
-      In case this is omitted, fallbacks to the value of the "Host" header of
-      the request (Optional).
-
-    Note that the `hawk_session` and `id` parameters are mutually exclusive.
-    You should use either `hawk_session` or both `id` and 'key'.
-    """
+class Signer:
     def __init__(self, hawk_session=None, id=None, key=None, algorithm='sha256',
                  credentials=None, server_url=None, _timestamp=None):
         if credentials is not None:
@@ -66,9 +42,29 @@ class HawkAuth(AuthBase):
         self._timestamp = _timestamp
         self.host = urlparse(server_url).netloc if server_url else None
 
-    def __call__(self, r):
+    async def get(self, url, *args, **kw):
+        headers = kw.pop('headers', {})
         if self.host is not None:
-            r.headers['Host'] = self.host
+            headers['Host'] = self.host
+
+        sender = mohawk.Sender(
+            self.credentials,
+            url,
+            'GET',
+            content='',
+            content_type=headers.get('Content-Type', ''),
+            _timestamp=self._timestamp
+        )
+
+        headers['Authorization'] = sender.request_header
+        print(headers['Authorization'])
+        return (await self._session.get(url, *args, headers=headers,
+                **kw))
+
+
+    def __call__(self, session):
+        self._session = session
+        return self
 
         sender = mohawk.Sender(
             self.credentials,
@@ -112,23 +108,3 @@ def HKDF(secret, salt, info, size, hashmod=hashlib.sha256):
     """HKDF-extract-and-expand as a single function."""
     PRK = HKDF_extract(salt, secret, hashmod)
     return HKDF_expand(PRK, info, size, hashmod)
-
-
-# If httpie is installed, register the hawk plugin.
-try:
-
-    from httpie.plugins import AuthPlugin
-
-    class HawkPlugin(AuthPlugin):
-
-        name = 'Hawk Auth'
-        auth_type = 'hawk'
-        description = ''
-
-        def get_auth(self, username, password):
-            if password == '':
-                return HawkAuth(hawk_session=username)
-            return HawkAuth(id=username, key=password)
-
-except ImportError:
-    pass
