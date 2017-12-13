@@ -2,7 +2,7 @@ import sys
 from setuptools import setup, find_packages
 
 
-install_requires = []
+install_requires = ['aiohttp', 'mohawk']
 description = ''
 
 classifiers = ["Programming Language :: Python",
