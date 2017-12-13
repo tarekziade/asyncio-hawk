@@ -61,6 +61,7 @@ class Signer:
             if not isinstance(data, str):
                 # XXX order?
                 content = json.dumps(data)
+                kw['data'] = content
             else:
                 raise NotImplementedError()
 
@@ -75,7 +76,8 @@ class Signer:
 
         headers['Authorization'] = sender.request_header
         print(headers['Authorization'])
-        return (await self._session.get(url, *args, headers=headers,
+        meth = getattr(self._session, method.lower())
+        return (await meth(url, *args, headers=headers,
                 **kw))
 
 
