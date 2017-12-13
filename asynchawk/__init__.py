@@ -58,7 +58,7 @@ class Signer:
         data = kw.get('data')
         content = ''
         if data:
-            if isinstance(data, dict):
+            if not isinstance(data, str):
                 # XXX order?
                 content = json.dumps(data)
             else:
