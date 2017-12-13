@@ -62,6 +62,7 @@ class Signer:
                 # XXX order?
                 content = json.dumps(data)
                 kw['data'] = content
+                headers['Content-type'] = 'application/json'
             else:
                 raise NotImplementedError()
 
