@@ -13,3 +13,5 @@ class TestSigning(unittest.TestCase):
         async with aiohttp.ClientSession() as session:
             session = signer(session)
             resp = await session.get('http://example.com')
+            json_data = {'of': 'data'}
+            resp = await session.post('http://example.com', data=json_data)

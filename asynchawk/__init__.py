@@ -1,3 +1,4 @@
+import json
 import binascii
 import codecs
 import hashlib
@@ -42,16 +43,32 @@ class Signer:
         self._timestamp = _timestamp
         self.host = urlparse(server_url).netloc if server_url else None
 
+    async def post(self, url, data=None, *args, **kw):
+        kw['data'] = data
+        return (await self._request(url, 'POST', *args, **kw))
+
     async def get(self, url, *args, **kw):
+        return (await self._request(url, 'GET', *args, **kw))
+
+    async def _request(self, url, method, *args, **kw):
         headers = kw.pop('headers', {})
         if self.host is not None:
             headers['Host'] = self.host
 
+        data = kw.get('data')
+        content = ''
+        if data:
+            if isinstance(data, dict):
+                # XXX order?
+                content = json.dumps(data)
+            else:
+                raise NotImplementedError()
+
         sender = mohawk.Sender(
             self.credentials,
             url,
-            'GET',
-            content='',
+            method,
+            content=content,
             content_type=headers.get('Content-Type', ''),
             _timestamp=self._timestamp
         )
