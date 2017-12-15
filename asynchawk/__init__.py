@@ -61,7 +61,7 @@ class Signer:
             if not isinstance(data, str):
                 # XXX order?
                 content = json.dumps(data)
-                kw['data'] = content
+                data = content
                 headers['Content-Type'] = 'application/json'
             else:
                 raise NotImplementedError()

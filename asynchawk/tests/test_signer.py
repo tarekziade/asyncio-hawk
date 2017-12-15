@@ -25,7 +25,6 @@ class TestSigner(unittest.TestCase):
             return creds
 
         ct = headers['Content-Type']
-        content = data
         rc = Receiver(creds_map, headers['Authorization'], url, 'POST',
-                content=json.dumps(content), content_type=ct)
+                content=data, content_type=ct)
 
