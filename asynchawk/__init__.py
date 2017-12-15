@@ -80,8 +80,11 @@ class Signer:
 
     async def _request(self, url, method, *args, **kw):
         headers, data = self.sign(url, method, *args, **kw)
-        return (await meth(url, *args, headers=headers,
-                data=data, **kw))
+        meth = getattr(self._session, method.lower())
+        kw.pop('headers', None)
+        kw.pop('data', None)
+
+        return (await meth(url, headers=headers, data=data, *args, **kw))
 
     def __call__(self, session):
         self._session = session
