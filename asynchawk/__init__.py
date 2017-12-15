@@ -50,7 +50,7 @@ class Signer:
     async def get(self, url, *args, **kw):
         return (await self._request(url, 'GET', *args, **kw))
 
-    async def _request(self, url, method, *args, **kw):
+    def sign(self, url, method, *args, **kw):
         headers = kw.pop('headers', {})
         if self.host is not None:
             headers['Host'] = self.host
@@ -62,7 +62,7 @@ class Signer:
                 # XXX order?
                 content = json.dumps(data)
                 kw['data'] = content
-                headers['Content-type'] = 'application/json'
+                headers['Content-Type'] = 'application/json'
             else:
                 raise NotImplementedError()
 
@@ -76,28 +76,16 @@ class Signer:
         )
 
         headers['Authorization'] = sender.request_header
-        print(headers['Authorization'])
-        meth = getattr(self._session, method.lower())
-        return (await meth(url, *args, headers=headers,
-                **kw))
+        return headers, data
 
+    async def _request(self, url, method, *args, **kw):
+        headers, data = self.sign(url, method, *args, **kw)
+        return (await meth(url, *args, headers=headers,
+                data=data, **kw))
 
     def __call__(self, session):
         self._session = session
         return self
-
-        sender = mohawk.Sender(
-            self.credentials,
-            r.url,
-            r.method,
-            content=r.body or '',
-            content_type=r.headers.get('Content-Type', ''),
-            _timestamp=self._timestamp
-        )
-
-        r.headers['Authorization'] = sender.request_header
-        return r
-
 
 def HKDF_extract(salt, IKM, hashmod=hashlib.sha256):
     """HKDF-Extract; see RFC-5869 for the details."""
